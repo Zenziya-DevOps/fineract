@@ -1,0 +1,17 @@
+name: "🏗 Build de Fineract API"
+on:
+  push:
+    branches:
+    - fork-zenziya
+    paths:
+    - fineract-provider/**
+  workflow_dispatch:
+
+jobs:
+  build-zenziya-fineract:
+    uses: ./.github/workflows/build-docker-and-push.yml
+    with:
+      PROJECT_DIR: ./
+      IMAGE_NAME: zenziya-fineract
+    secrets:
+      DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}

@@ -1,0 +1,43 @@
+name: Build Docker and push
+on:
+  workflow_call:
+    inputs:
+      IMAGE_NAME:
+        required: true
+        type: string
+      PROJECT_DIR:
+        required: true
+        type: string
+    secrets:
+      DO_API_TOKEN:
+        required: true
+    outputs:
+      IMG_VERSION:
+        description: "Image Version"
+        value: ${{ jobs.build-docker-and-push.outputs.img_version }}
+
+env:
+  REGISTRY: "registry.digitalocean.com/odin"
+  IMAGE_NAME: ${{ inputs.IMAGE_NAME }}
+  PROJECT_DIR: ${{ inputs.PROJECT_DIR }}
+jobs:
+  build-docker-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      img_version: ${{ steps.img_version.outputs.img_version }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+      - id: img_version
+        run: echo "::set-output name=img_version::$(echo $GITHUB_SHA | head -c7)"
+      - name: Build container image
+        run: cd $PROJECT_DIR && docker build  -t $(echo $REGISTRY)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) .
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+            token: ${{ secrets.DO_API_TOKEN }}
+      - name: Login Registry Digitalocean
+        run: doctl registry login
+      - name: Push image to DigitalOcean Container Registry
+        run: docker push $(echo $REGISTRY)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)
